@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const axios = require('axios');
 const app = express();
@@ -8,22 +7,15 @@ app.use(express.static('public'));
 
 app.get('/proxy/radar/:site/:product/:timestamp', async (req, res) => {
   const { site, product, timestamp } = req.params;
-
-  // Example URL:
-  // https://noaa-nexrad-level3.s3.amazonaws.com/2025/05/04/KLWX/N0Q/KLWX_N0Q_20250504_2348
-  const year = timestamp.slice(0, 4);
-  const month = timestamp.slice(4, 6);
-  const day = timestamp.slice(6, 8);
-  const hourmin = timestamp.slice(9); // 2348
-
-  const awsUrl = `https://noaa-nexrad-level3.s3.amazonaws.com/${year}/${month}/${day}/${site}/${product}/${site}_${product}_${timestamp}`;
+  const url = `https://noaa-nexrad-level3.s3.amazonaws.com/composite/${site}/${product}/${timestamp}.gif`;
 
   try {
-    const response = await axios.get(awsUrl, { responseType: 'arraybuffer' });
-    res.setHeader('Content-Type', 'application/octet-stream');
+    const response = await axios.get(url, { responseType: 'arraybuffer' });
+    res.set('Content-Type', 'image/gif');
     res.send(response.data);
   } catch (err) {
-    res.status(404).send('Radar image not found');
+    console.error('Radar fetch error:', err.message);
+    res.status(404).send('Radar image not found.');
   }
 });
 
