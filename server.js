@@ -1,26 +1,27 @@
 const express = require('express');
-const loaders_nexrad = require('loaders_nexrad'); // Make sure this is installed
+const loaders_nexrad = require('loaders_nexrad');
 const cors = require('cors');
 
 const app = express();
 app.use(cors());
 
-app.get('/api/radar-frame/:site/:product/:timestamp', async (req, res) => {
+app.get('/proxy/radar/:site/:product/:timestamp.png', async (req, res) => {
     const { site, product, timestamp } = req.params;
 
     try {
-        const buffer = await loaders_nexrad.fetch_level_3_file(site, product, timestamp);
-        loaders_nexrad.quick_level_3_plot(site, product, (plotBuffer) => {
-            res.set('Content-Type', 'image/png');
-            res.send(plotBuffer);
-        });
+        // Fetch and render the radar image using loaders_nexrad
+        await loaders_nexrad.quick_level_3_plot(site, product, (buffer) => {
+            res.setHeader('Content-Type', 'image/png');
+            res.send(buffer);
+        }, timestamp);
     } catch (err) {
-        console.error(err);
-        res.status(500).send('Failed to load radar image');
+        console.error('Error serving radar image:', err);
+        res.status(500).send('Radar image fetch failed.');
     }
 });
 
-app.listen(process.env.PORT || 3000, () => {
-    console.log('Server running');
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+    console.log(`Proxy server running on port ${port}`);
 });
 
